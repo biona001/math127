@@ -120,27 +120,42 @@ def makeNewMatrix(distMatrix, QMatrix):
 	# to the lower right hand corner of the new matrix. The 2 integers keep tracks
 	# of how many rows/columns have been "found" that needs to be copied, so the 
 	# numbers can be transfered to the new matrix.
-	
 	rowCounter = 0
 	for x in range(0, matrixSize):
 		if (x == minRowCoord) or (x == minColCoord):
 			continue # the new matrix should not include the original 2 nodes.
 		rowCounter += 1
-
 		colCounter = 0
 		for y in range(0, matrixSize):
-			
 			if (y == minRowCoord) or (y == minColCoord):
 				continue
 			colCounter += 1
 			newMatrix[rowCounter][colCounter] = distMatrix[x][y]
+
+	# now search the original distance matrix, and locate the row of ANode (not BNode!)
+	# and print that row into a list. From this list, subtract AtoNewNodeDistm from each 
+	# entry that was not in ANode's row or BNode's row, so that distances from the new 
+	# node and remaining nodes that wasn't changed can be updated. 
+	newFirstRow = [row[minRowCoord] for row in distMatrix]
+	newMatrixCounter = 1
+	for i in range(0, len(newFirstRow)):
+		if i == minRowCoord or i == minColCoord:
+			continue
+		newMatrix[0][newMatrixCounter] = newFirstRow[i] - AtoNewNodeDist
+		newMatrix[newMatrixCounter][0] = newFirstRow[i] - AtoNewNodeDist
+		newMatrixCounter += 1
 
 	return newMatrix
 
 
 
 matrix1 = QMatrix(testMatrix)
-print makeNewMatrix(testMatrix, matrix1)
+matrix2 = makeNewMatrix(testMatrix, matrix1)
+print matrix2
+
+matrix3 = QMatrix(matrix2)
+matrix4 = makeNewMatrix(matrix2, matrix3)
+print matrix4
 
 
 
