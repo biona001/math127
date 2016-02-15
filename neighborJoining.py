@@ -76,7 +76,7 @@ def QMatrix(inputMatrix):
 	return QMatrix
 
 
-# Returns the coordinate of the lowest entry in a matrix as an array.
+# Returns the coordinate of the lowest entry in a matrix as a pair a number.
 # Only searches the top triangular matrix.
 def findMin(matrix):
 	currentMin = matrix[0][0]
@@ -93,7 +93,8 @@ def findMin(matrix):
 
 
 # takes in the original distance matrix and a QMatrix, outputs a distance matrix whose 
-# dimension is 1 smaller than the QMatrix
+# dimension is 1 smaller than the QMatrix. The new node will be on the first row and 
+# column. 
 def makeNewMatrix(distMatrix, QMatrix):
 	assert distMatrix.shape[0] == QMatrix.shape[0], 'Impossible: distance matrix and QMatrix have different size.'
 	assert distMatrix.shape[1] == QMatrix.shape[1], 'Impossible: distance matrix and QMatrix have different size.'
@@ -107,19 +108,36 @@ def makeNewMatrix(distMatrix, QMatrix):
 	AtoNewNodeDist = 0.5 * AtoBDist + randomConst * (calcRowSum(distMatrix, minRowCoord) - calcRowSum(distMatrix, minColCoord)) 
 	BtoNewNodeDist = AtoBDist - AtoNewNodeDist
 
-	print AtoNewNodeDist
-	print BtoNewNodeDist
-
 
 	#makes a new matrix whose size is 1 smaller than the QMatrix
 	newMatrix = numpy.zeros((matrixSize - 1, matrixSize - 1))
 
-	for x in range(0, matrixSize - 1):
-		for y in range(0, matrixSize - 1):
-			if x == y:
-				continue
+	#for x in range(0, matrixSize - 1):
+		#newMatrix[0][x] = 
 
-			newMatrix[x][y] = distMatrix[x][y] - 
+
+	# first search through the original matrix, and copies unaffected distances
+	# to the lower right hand corner of the new matrix. The 2 integers keep tracks
+	# of how many rows/columns have been "found" that needs to be copied, so the 
+	# numbers can be transfered to the new matrix.
+	
+	rowCounter = 0
+	for x in range(0, matrixSize):
+		if (x == minRowCoord) or (x == minColCoord):
+			continue # the new matrix should not include the original 2 nodes.
+		rowCounter += 1
+
+		colCounter = 0
+		for y in range(0, matrixSize):
+			
+			if (y == minRowCoord) or (y == minColCoord):
+				continue
+			colCounter += 1
+			newMatrix[rowCounter][colCounter] = distMatrix[x][y]
+
+	return newMatrix
+
+
 
 matrix1 = QMatrix(testMatrix)
 print makeNewMatrix(testMatrix, matrix1)
