@@ -1,0 +1,23 @@
+digraph finite_state_machine {
+	rankdir=LR;
+	size="8,5"
+	node [shape = circle];
+	orangutan -> split_1 [ label = 0.0931666666667];
+	gibbon -> split_1 [ label = 0.117833333333];
+	split_1 -> split_2 [ label = 0.0338333333333];
+	split_2 -> gorrila [ label = 0.053 ];
+	split_2 -> split_3 [ label = 0.0115 ];
+	split_3 -> human [ label = 0.0405 ];
+	split_3 -> chimp [ label = 0.0535 ];
+}digraph finite_state_machine {
+	rankdir=LR;
+	size="8,5"
+	node [shape = circle];
+	orangutan -> split_1 [ label = 0.0931666666667];
+	gibbon -> split_1 [ label = 0.117833333333];
+	split_1 -> split_2 [ label = 0.0338333333333];
+	split_2 -> gorrila [ label = 0.053 ];
+	split_2 -> split_3 [ label = 0.0115 ];
+	split_3 -> human [ label = 0.0405 ];
+	split_3 -> chimp [ label = 0.0535 ];
+}

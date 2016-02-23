@@ -9,7 +9,7 @@ import numpy
 # a = doctor, b = patient_1, .... 
 ###########################
 
-###### HOW TO DO THIS?######
+###### HOW TO DO THIS?#######
 # This code basically follows the algorithm given by wiki here:
 # 	https://en.wikipedia.org/wiki/Neighbor_joining#The_Q-matrix
 # After running throught the alrithm, we output an array, called intermediateLengths, 
@@ -32,15 +32,6 @@ import numpy
 # then create another QMatrix based on the new matrix... repeat until all 
 # vertices are joined.
 
-testMatrix = numpy.zeros((5, 5))
-
-testMatrix[0, :] = numpy.array([0, 5, 9, 9, 8])
-testMatrix[1, :] = numpy.array([5, 0, 10, 10, 9])
-testMatrix[2, :] = numpy.array([9, 10, 0, 8, 7])
-testMatrix[3, :] = numpy.array([9, 10, 8, 0, 3])
-testMatrix[4, :] = numpy.array([8, 9, 7, 3, 0])
-
-
 def calcRowSum(matrix, row):
 	"""calculates the sum of a particular row, but works for columns too since these 
 	matrices are symmetric."""
@@ -53,7 +44,6 @@ def calcRowSum(matrix, row):
 		colCounter += 1
 	return rowSum
 
-
 def findMin(matrix):
 	"""Returns the coordinate of the lowest entry in a matrix as a pair a number.
 	Only searches the top triangular matrix."""
@@ -61,13 +51,12 @@ def findMin(matrix):
 	xCor, yCor = 0, 0
 	for x in range(0, matrix.shape[0]):
 		for y in range(x + 1, matrix.shape[1]):
-			if matrix[x][y] < currentMin:
+			if matrix[x][y] - currentMin < 0.00000001 :
+			#if matrix[x][y] < currentMin:
 				currentMin = matrix[x][y]
 				xCor, yCor = x, y
 	return (xCor, yCor)	
 
-
-# 
 def QMatrix(distMatrix):
 	"""Inputs a distance matrix d(i,j) and outputs a QMatrix Q(i,j).
 	Use the following formula found on wiki:
@@ -89,19 +78,20 @@ def QMatrix(distMatrix):
 			colSum = calcRowSum(distMatrix, y)
 			QMatrix[x][y] = (sizeOfMatrix - 2) * distMatrix[x][y] - colSum - rowSum
 
+	print QMatrix
 	return QMatrix
-
 
 """a list that stores the values of the 2 "new distance" created when makeNewMatrix
 is ran. Need this to output a phylogenetic tree, but storing it this way might
-not be the smartest thing to do."""
+not be the smartest thing to do. """
 intermediateLengths = []
+taxaOrdered = []
 
-
-def makeNewMatrix(distMatrix, QMatrix):
-	"""takes in the original distance matrix and a QMatrix, outputs a distance matrix whose 
-	dimension is 1 smaller than the QMatrix. The new node will be on the first row and 
-	column. """
+def makeNewMatrix(distMatrix, QMatrix, taxaList):
+	"""takes in the original distance matrix, a QMatrix, and a list of taxas, 
+	outputs a distance matrix whose dimension is 1 smaller than the QMatrix, and 
+	a taxa list where the 2 joined nodes are removed. The newly created node will be on the 
+	first row and column of the new matrix. """
 
 	assert distMatrix.shape[0] == QMatrix.shape[0], 'Impossible: distance matrix and QMatrix have different size.'
 	assert distMatrix.shape[1] == QMatrix.shape[1], 'Impossible: distance matrix and QMatrix have different size.'
@@ -109,11 +99,27 @@ def makeNewMatrix(distMatrix, QMatrix):
 	matrixSize = QMatrix.shape[0]
 	minRowCoord, minColCoord = findMin(QMatrix)[0], findMin(QMatrix)[1]
 	AtoBDist = distMatrix[minRowCoord][minColCoord] # distance between the closest 2 nodes
-	randomConst = 1. / (2 * (matrixSize - 2)) # need . to turn 1 into a float. Fuck wasted 30 minutes here trying catch this bug. Fuck python 2.7
+	randomConst = 1. / (2 * (matrixSize - 2)) 
 
 	#calculates the distance from Node A to the newly constructed Node.
 	AtoNewNodeDist = 0.5 * AtoBDist + randomConst * (calcRowSum(distMatrix, minRowCoord) - calcRowSum(distMatrix, minColCoord)) 
 	BtoNewNodeDist = AtoBDist - AtoNewNodeDist
+
+
+
+	# calculates what coordinates are being joined, add them 
+	# to a new List to keep track of which ones were removed first,
+	# and remove them from the original taxaList
+	firstTaxa = taxaList[minRowCoord]
+	secondTaxa = taxaList[minColCoord]
+	taxaOrdered.append(firstTaxa)
+	taxaOrdered.append(secondTaxa)
+
+	for index in sorted([minRowCoord, minColCoord], reverse=True): #deleting 2 taxa 
+		del taxaList[index]
+	
+	taxaList.insert(0, "middle_" + firstTaxa)
+	
 	intermediateLengths.append(AtoNewNodeDist)
 	intermediateLengths.append(BtoNewNodeDist)
 
@@ -151,7 +157,7 @@ def makeNewMatrix(distMatrix, QMatrix):
 
 	return newMatrix
 
-def calc3x3Matrix(distMatrix):
+def calc3x3Matrix(distMatrix, taxaList):
 	"""takes in the final 3x3 matrix, and outputs the final 3 distances.
 	   here A is really node D, B is node E for visualization purposes, if you 
 	   are looking at the wiki page. """
@@ -159,50 +165,83 @@ def calc3x3Matrix(distMatrix):
 	AtoNewNodeDist = 0.5 * AtoBDist + 0.5 * (calcRowSum(distMatrix, 1) - calcRowSum(distMatrix, 2)) 
 	BtoNewNodeDist = AtoBDist - AtoNewNodeDist
 	lastUnresolvedDist = distMatrix[0][1] - AtoNewNodeDist
+
+	taxaOrdered.append("middle_" + taxaList[1])
+	taxaOrdered.append(taxaList[1])
+	taxaOrdered.append(taxaList[2])
 	return (lastUnresolvedDist, AtoNewNodeDist, BtoNewNodeDist)
 
-def writeGV(array):
+def writeGV(intermediateLengths, taxaOrdered):
 	"""takes in final output of intermediateLengths and writes a .gv file
 	   that can be turned into a visualization of the tree"""
+	k = (len(intermediateLengths) - 1) / 2
+	someList = [] # a list that looks like [0, 1, 2, ...] which counts the number of splits. aka they are intermediate nodes in a tree
+	for i in range(k):
+		someList.append(i + 1)
 
-	with open('graph.gv', 'a') as the_file:
+	print someList
+
+	with open('graph_test5.gv', 'a') as the_file:
 		the_file.write('digraph finite_state_machine {\n')
 		the_file.write('	rankdir=LR;\n')
 		the_file.write('	size="8,5"\n')
 		the_file.write('	node [shape = circle];\n')
-		the_file.write('	Node_1 -> middle_1 [ label = ' + str(array[0]) + '];\n')
-		the_file.write('	Node_2 -> middle_1 [ label = ' + str(array[1]) + '];\n')
-		the_file.write('	middle_1 -> middle_2 [ label = ' + str(array[2]) + ' ];\n')
+		the_file.write('	' + str(taxaOrdered[0]) + ' -> split_' + str(someList[0]) + ' [ label = ' + str(intermediateLengths[0]) + '];\n')
+		the_file.write('	' + str(taxaOrdered[1]) + ' -> split_' + str(someList[0]) + ' [ label = ' + str(intermediateLengths[1]) + '];\n')
+		the_file.write('	split_' + str(someList[0]) + ' -> ' + 'split_' + str(someList[1]) + ' [ label = ' + str(intermediateLengths[2]) + '];\n')
 
 		# auto assign every edge/node except the first 3 distance in given array
-		numIteration = (len(array) - 3) / 2
+		numIteration = (len(intermediateLengths) - 3) / 2
 		for i in range(0, numIteration): 
-			the_file.write('	middle_' + str(i+2) + ' -> Node_' + str(i+3) + ' [ label = ' + str(array[i+3]) + ' ];\n')
 			if i == numIteration - 1:
-				the_file.write('	middle_' + str(i+2) + ' -> Node_' + str(i+4) + ' [ label = ' + str(array[-1]) + ' ];\n')
+				the_file.write('	split_' + str(someList[-1]) + ' -> ' + str(taxaOrdered[-2]) + ' [ label = ' + str(intermediateLengths[-2]) + ' ];\n')
+				the_file.write('	split_' + str(someList[-1]) + ' -> ' + str(taxaOrdered[-1]) + ' [ label = ' + str(intermediateLengths[-1]) + ' ];\n')			
 			else:
-				the_file.write('	middle_' + str(i+2) + ' -> middle_' + str(i+3) + ' [ label = ' + str(array[i+4]) + ' ];\n')
+				the_file.write('	split_' + str(someList[i+1]) + ' -> ' + str(taxaOrdered[i+3]) + ' [ label = ' + str(intermediateLengths[i+3]) + ' ];\n')
+				the_file.write('	split_' + str(someList[i+1]) + ' -> split_' + str(someList[i+2]) + ' [ label = ' + str(intermediateLengths[i+4]) + ' ];\n')
 		
 		the_file.write('}')
 
 
-"""MAIN METHOD IS HERE: calling neightbor joining on testMatrix, returning an array
-   that contains all distances. Hope this works."""
-print testMatrix
-while testMatrix.shape[0] > 3:
-	matrix1 = QMatrix(testMatrix)
-	matrix2 = makeNewMatrix(testMatrix, matrix1)
-	print matrix2
-	testMatrix = matrix2
+"""calling neightbor joining on testMatrix. Writes a .gv file."""
+def main():
+	#mat = numpy.zeros((5, 5))
+	#mat[0, :] = numpy.array([0, 5, 9, 9, 8])
+	#mat[1, :] = numpy.array([5, 0, 10, 10, 9])
+	#mat[2, :] = numpy.array([9, 10, 0, 8, 7])
+	#mat[3, :] = numpy.array([9, 10, 8, 0, 3])
+	#mat[4, :] = numpy.array([8, 9, 7, 3, 0])
+	#taxaList = ['a', 'b', 'c', 'd', 'e']
 
-last3Dist = calc3x3Matrix(testMatrix)
+	taxaList = ['gorrila', 'orangutan', 'human', 'chimp', 'gibbon']
+	print taxaList
+	mat = numpy.zeros((5, 5))
+	mat[0, :] = numpy.array([0.0, 0.18, 0.11, 0.113, 0.215])
+	mat[1, :] = numpy.array([0.189, 0.0, 0.179, 0.192, 0.211])
+	mat[2, :] = numpy.array([0.11, 0.179, 0.0, 0.094, 0.205])
+	mat[3, :] = numpy.array([0.113, 0.192, 0.094, 0.0, 0.210])
+	mat[4, :] = numpy.array([0.215, 0.211, 0.205, 0.214, 0.0])
 
-for i in range(3):
-	intermediateLengths.append(last3Dist[i])
+	print mat
 
-print intermediateLengths
+	while mat.shape[0] > 3:
+		matrix1 = QMatrix(mat)
+		matrix2 = makeNewMatrix(mat, matrix1, taxaList)
+		mat = matrix2
+		print mat
 
-writeGV(intermediateLengths)
+	print intermediateLengths
+	last3Dist = calc3x3Matrix(mat, taxaList)
+
+	for i in range(3):
+		intermediateLengths.append(last3Dist[i])
+
+	#print taxaOrdered
+	#print intermediateLengths
+	writeGV(intermediateLengths, taxaOrdered)
+	#print ".gv file written."
+
+main()
 
 
 

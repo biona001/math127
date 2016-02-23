@@ -1,0 +1,11 @@
+graph G {
+	run -- intr [ label = "SS(B)" ];
+	intr -- runbl;
+	runbl -- run;
+	run -- kernel;
+	kernel -- zombie;
+	kernel -- sleep;
+	runswap -- runmem;
+	new -- runmem;
+	sleep -- runmem;
+}
