@@ -1,7 +1,7 @@
 """neighbor joining algorithm"""
 import numpy
 
-###### OVERALL LOGIC: #######
+###### OVERALL PROJECT LOGIC: #######
 # Given a string of doctor's DNA sequence, and a lot of patient's DNA sequence,
 # we can compute percentage of sites these sequences differ, denoted by p. Then we can 
 # calculate estimated distance between doctor and patients based on d = 3/4 ln(1-4/3*p).
@@ -9,12 +9,14 @@ import numpy
 # a = doctor, b = patient_1, .... 
 ###########################
 
-###### HOW TO DO THIS?#######
+###### HOW TO DO NEIGHBOR JOINING? #######
 # This code basically follows the algorithm given by wiki here:
 # 	https://en.wikipedia.org/wiki/Neighbor_joining#The_Q-matrix
-# After running throught the alrithm, we output an array, called intermediateLengths, 
-# which contains all the lengths we want. From this, we generate a .gv file 
-# for graphviz, which outputs the tree.
+# After running throught the alrithm, we output list called intermediateLengths. 
+# This list contains a bunch of 3x3 matrices, each followed by a list of their node names.
+# For example, it may look like 
+# [   [3x3 matrix, [split_1,b,c]]  ,  [3x3 matrix, [split_2, a, d]]   ...   [...]     ] 
+# From this, we generate a .gv file for graphviz, which outputs the tree.
 ##############################
 
 def calcRowSum(matrix, row):
@@ -36,7 +38,6 @@ def findMin(matrix):
 	xCor, yCor = 0, 0
 	for x in range(0, matrix.shape[0]):
 		for y in range(x + 1, matrix.shape[1]):
-			#if matrix[x][y] - currentMin < 0.00000001 :
 			if matrix[x][y] < currentMin:
 				currentMin = matrix[x][y]
 				xCor, yCor = x, y
@@ -80,7 +81,7 @@ def saveMatrix(dist1, dist2, AtoBDist):
 """a list of matrices that stores the values of the 2 "new distance" to the new node
 created when makeNewMatrix is ran. """
 matrixList = []
-numSplits = 0
+numSplits = 1
 
 
 def makeNewMatrix(distMatrix, QMatrix, taxaList):
@@ -100,6 +101,7 @@ def makeNewMatrix(distMatrix, QMatrix, taxaList):
 	#calculates the distance from Node A to the newly constructed Node.
 	AtoNewNodeDist = 0.5 * AtoBDist + randomConst * (calcRowSum(distMatrix, minRowCoord) - calcRowSum(distMatrix, minColCoord)) 
 	BtoNewNodeDist = AtoBDist - AtoNewNodeDist
+
 
 	# After connecting A and B to a new node split_0, put their distances into a 3x3 matrix. To 
 	# keep track of their node names, put their names into an array. Then put [3x3matrix, node_name]
@@ -167,7 +169,7 @@ def calc3x3Matrix(distMatrix, taxaList):
 	return
 
 def writeGV(matrixList):
-	with open('final_test3.gv', 'a') as the_file:
+	with open('final_test4.gv', 'a') as the_file:
 		the_file.write('graph G {\n')
 
 		for pair in matrixList: 
@@ -193,22 +195,22 @@ def main():
 	#mat[4, :] = numpy.array([8, 9, 7, 3, 0])
 	#taxaList = ['a', 'b', 'c', 'd', 'e']
 
-	#mat = numpy.zeros((5, 5))
-	#mat[0, :] = numpy.array([0.0, 0.18, 0.11, 0.113, 0.215])
-	#mat[1, :] = numpy.array([0.189, 0.0, 0.179, 0.192, 0.211])
-	#mat[2, :] = numpy.array([0.11, 0.179, 0.0, 0.094, 0.205])
-	#mat[3, :] = numpy.array([0.113, 0.192, 0.094, 0.0, 0.210])
-	#mat[4, :] = numpy.array([0.215, 0.211, 0.205, 0.214, 0.0])
-	#taxaList = ['gorrila', 'orangutan', 'human', 'chimp', 'gibbon']
+	mat = numpy.zeros((5, 5))
+	mat[0, :] = numpy.array([0.0, 0.18, 0.11, 0.113, 0.215])
+	mat[1, :] = numpy.array([0.189, 0.0, 0.179, 0.192, 0.211])
+	mat[2, :] = numpy.array([0.11, 0.179, 0.0, 0.094, 0.205])
+	mat[3, :] = numpy.array([0.113, 0.192, 0.094, 0.0, 0.210])
+	mat[4, :] = numpy.array([0.215, 0.211, 0.205, 0.214, 0.0])
+	taxaList = ['gorrila', 'orangutan', 'human', 'chimp', 'gibbon']
 
-	mat = numpy.zeros((6, 6))
-	mat[0, :] = numpy.array([0, 5, 4, 7, 6, 8])
-	mat[0, :] = numpy.array([5, 0, 7, 10, 9, 11])
-	mat[0, :] = numpy.array([4, 7, 0, 7, 6, 8])
-	mat[0, :] = numpy.array([7, 10, 7, 0, 5, 9])
-	mat[0, :] = numpy.array([6, 9, 6, 5, 0, 8])
-	mat[0, :] = numpy.array([8, 11, 8, 9, 8, 0])
-	taxaList = ['a', 'b', 'c', 'd', 'e', 'f']
+	#mat = numpy.zeros((6, 6))
+	#mat[0, :] = numpy.array([0, 5, 4, 7, 6, 8])
+	#mat[1, :] = numpy.array([5, 0, 7, 10, 9, 11])
+	#mat[2, :] = numpy.array([4, 7, 0, 7, 6, 8])
+	#mat[3, :] = numpy.array([7, 10, 7, 0, 5, 9])
+	#mat[4, :] = numpy.array([6, 9, 6, 5, 0, 8])
+	#mat[5, :] = numpy.array([8, 11, 8, 9, 8, 0])
+	#taxaList = ['a', 'b', 'c', 'd', 'e', 'f']
 
 	while mat.shape[0] > 3:
 		matrix1 = QMatrix(mat)
@@ -216,8 +218,6 @@ def main():
 		mat = matrix2
 
 	calc3x3Matrix(mat, taxaList)
-
-	print matrixList
 
 	writeGV(matrixList)
 	print ".gv file written"

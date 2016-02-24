@@ -1,0 +1,9 @@
+graph G {
+	split_1 -- orangutan[ label = 0.0931666666667];
+	split_1 -- gibbon[ label = 0.117833333333];
+	split_2 -- split_1[ label = 0.0385];
+	split_2 -- gorrila[ label = 0.058];
+	split_3 -- split_2[ label = 0.0065];
+	split_3 -- human[ label = 0.0435];
+	split_3 -- chimp[ label = 0.0505];
+}
