@@ -1,0 +1,131 @@
+graph G {
+	a -- split_1 [ label = 2.0];
+	b -- split_1 [ label = 3.0];
+	split_1 -- split_2 [ label = 2.0];
+	split_2 -- e [ label = 1.0 ];
+	split_2 -- split_3 [ label = 6.0 ];
+	split_3 -- middle_a [ label = 5.0 ];
+	split_3 -- c [ label = 7.0 ];
+}graph G {
+	a -- split_1 [ label = 2.0];
+	b -- split_1 [ label = 3.0];
+	split_1 -- split_2 [ label = 2.0];
+	split_2 -- e [ label = 1.0 ];
+	split_2 -- split_3 [ label = 6.0 ];
+	split_3 -- middle_a [ label = 5.0 ];
+	split_3 -- c [ label = 7.0 ];
+}graph G {
+	a -- split_1 [ label = 2.0];
+	b -- split_1 [ label = 3.0];
+	split_1 -- split_2 [ label = 2.0];
+	split_2 -- e [ label = 1.0 ];
+	split_2 -- split_3 [ label = 6.0 ];
+	split_3 -- middle_a [ label = 5.0 ];
+	split_3 -- c [ label = 7.0 ];
+}graph G {
+	a -- split_1 [ label = 2.0];
+	b -- split_1 [ label = 3.0];
+	split_1 -- split_2 [ label = 2.0];
+	split_2 -- e [ label = 1.0 ];
+	split_2 -- split_3 [ label = 6.0 ];
+	split_3 -- middle_a [ label = 5.0 ];
+	split_3 -- c [ label = 7.0 ];
+}graph G {
+	a -- split_1 [ label = 2.0];
+	b -- split_1 [ label = 3.0];
+	split_1 -- split_2 [ label = 2.0];
+	split_2 -- e [ label = 1.0 ];
+	split_2 -- split_3 [ label = 6.0 ];
+	split_3 -- middle_a [ label = 5.0 ];
+	split_3 -- c [ label = 7.0 ];
+}graph G {
+	a -- split_1 [ label = 2.0];
+	b -- split_1 [ label = 3.0];
+	split_1 -- split_2 [ label = 2.0];
+	split_2 -- e [ label = 1.0 ];
+	split_2 -- split_3 [ label = 6.0 ];
+	split_3 -- middle_a [ label = 5.0 ];
+	split_3 -- c [ label = 7.0 ];
+}graph G {
+	a -- split_1 [ label = 2.0];
+	b -- split_1 [ label = 3.0];
+	split_1 -- split_2 [ label = 2.0];
+	split_2 -- e [ label = 1.0 ];
+	split_2 -- split_3 [ label = 6.0 ];
+	split_3 -- middle_a [ label = 5.0 ];
+	split_3 -- c [ label = 7.0 ];
+}graph G {
+	a -- split_1 [ label = 2.0];
+	b -- split_1 [ label = 3.0];
+	split_1 -- split_2 [ label = 2.0];
+	split_2 -- e [ label = 1.0 ];
+	split_2 -- split_3 [ label = 6.0 ];
+	split_3 -- middle_a [ label = 5.0 ];
+	split_3 -- c [ label = 7.0 ];
+}graph G {
+	a -- split_1 [ label = 2.0];
+	b -- split_1 [ label = 3.0];
+	split_1 -- split_2 [ label = 2.0];
+	split_2 -- e [ label = 1.0 ];
+	split_2 -- split_3 [ label = 6.0 ];
+	split_3 -- middle_a [ label = 5.0 ];
+	split_3 -- c [ label = 7.0 ];
+}graph G {
+	a -- split_1 [ label = 2.0];
+	b -- split_1 [ label = 3.0];
+	split_1 -- split_2 [ label = 2.0];
+	split_2 -- e [ label = 1.0 ];
+	split_2 -- split_3 [ label = 6.0 ];
+	split_3 -- middle_a [ label = 5.0 ];
+	split_3 -- c [ label = 7.0 ];
+}graph G {
+graph G {
+	split_0 -- a[ label = 2.0];
+graph G {
+	split_0 -- a[ label = 2.0];
+graph G {
+	split_0 -- a[ label = 2.0];
+	split_0 -- b[ label = 3.0];
+	split_1 -- split_0[ label = 3.0];
+	split_1 -- c[ label = 4.0];
+graph G {
+	split_0 -- a[ label = 2.0];
+	split_0 -- b[ label = 3.0];
+	split_1 -- split_0[ label = 3.0];
+	split_1 -- c[ label = 4.0];
+graph G {
+	split_0 -- a[ label = 2.0];
+	split_0 -- b[ label = 3.0];
+	split_1 -- split_0[ label = 3.0];
+	split_1 -- c[ label = 4.0];
+graph G {
+	split_0 -- a[ label = 2.0];
+	split_0 -- b[ label = 3.0];
+	split_1 -- split_0[ label = 3.0];
+	split_1 -- c[ label = 4.0];
+graph G {
+	split_0 -- a[ label = 2.0];
+	split_0 -- b[ label = 3.0];
+	split_1 -- split_0[ label = 3.0];
+	split_1 -- c[ label = 4.0];
+graph G {
+	split_0 -- a[ label = 2.0];
+	split_0 -- b[ label = 3.0];
+	split_1 -- split_0[ label = 3.0];
+	split_1 -- c[ label = 4.0];
+graph G {
+	split_0 -- a[ label = 2.0];
+	split_0 -- b[ label = 3.0];
+	split_1 -- split_0[ label = 3.0];
+	split_1 -- c[ label = 4.0];
+	split_2 -- split_1[ label = 2.0];
+	split_2 -- d[ label = 1.0];
+graph G {
+	split_0 -- a[ label = 2.0];
+	split_0 -- b[ label = 3.0];
+	split_1 -- split_0[ label = 3.0];
+	split_1 -- c[ label = 4.0];
+	split_2 -- split_1[ label = 2.0];
+	split_2 -- d[ label = 2.0];
+	split_2 -- e[ label = 1.0];
+}
