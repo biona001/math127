@@ -1,0 +1,15 @@
+graph G {
+	split_1 -- a[ label = 5.0];
+	split_1 -- b[ label = 2.0];
+	split_2 -- e[ label = 1.0];
+	split_2 -- f[ label = 4.0];
+	split_3 -- split_1[ label = 2.0];
+	split_3 -- c[ label = 1.0];
+	split_4 -- split_3[ label = 1.0];
+	split_4 -- d[ label = 3.0];
+	split_5 -- split_4[ label = 2.0];
+	split_5 -- split_2[ label = 2.0];
+	split_6 -- split_5[ label = 1.0];
+	split_6 -- g[ label = 2.0];
+	split_6 -- h[ label = 6.0];
+}

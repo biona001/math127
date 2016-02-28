@@ -1,23 +1,66 @@
 """neighbor joining algorithm"""
 import numpy
+import math
+from scipy.io import loadmat
 
 ###### OVERALL PROJECT LOGIC: #######
 # Given a string of doctor's DNA sequence, and a lot of patient's DNA sequence,
 # we can compute percentage of sites these sequences differ, denoted by p. Then we can 
-# calculate estimated distance between doctor and patients based on d = 3/4 ln(1-4/3*p).
+# calculate estimated distance between doctor and patients based on d = -3/4 ln(1-4/3*p).
 # Then the input matrix for neighbor joining is going to be these distances, where
 # a = doctor, b = patient_1, .... 
-###########################
+#####################################
 
 ###### HOW TO DO NEIGHBOR JOINING? #######
 # This code basically follows the algorithm given by wiki here:
-# 	https://en.wikipedia.org/wiki/Neighbor_joining#The_Q-matrix
-# After running throught the alrithm, we output list called intermediateLengths. 
+# 	https://en.wikipedia.org/wiki/Neighbor_joining#The_algorithm
+# After running throught the alrithm, we output a list called matrixList. 
 # This list contains a bunch of 3x3 matrices, each followed by a list of their node names.
-# For example, it may look like 
-# [   [3x3 matrix, [split_1,b,c]]  ,  [3x3 matrix, [split_2, a, d]]   ...   [...]     ] 
+# For example, it may look like: (except the last one is a 4x4 matrix)
+# [   [3x3 matrix, [split_1,b,c]]  ,  [3x3 matrix2, [split_2, a, d]]   ...   [...]     ] 
 # From this, we generate a .gv file for graphviz, which outputs the tree.
-##############################
+############################################
+
+def MakeDistanceMatrixFromDNA(DNA_List):
+	""" given a lot of DNA sequences, construct a distance matrix out of them"""
+
+	# Need all sequences to be the same length. If not, find the shortest one
+	# and truncate others by cutting extra nucleotides off from the end. 
+	def minLength(DNA_List): 
+		min_length = len(DNA_List[0])
+		for DNA in DNA_List:
+			if len(DNA) <= min_length:
+				min_length = len(DNA)
+		return min_length
+
+	def truncate(DNA_List, min_length): 
+		new_list = []
+		for DNA in DNA_List:
+			new_list.append(DNA[:min_length])
+		return new_list
+
+	def calcDifference(seq1, seq2):
+		difference = 0
+		assert len(seq1) == len(seq2), 'sequences have to be the same length'
+		for i in range(0, len(seq1)):
+			if seq1[i] != seq2[i]:
+				difference += 1
+		perc_diff = float(difference) / float(len(seq1))
+		inside_log = 1 - 4/3 * perc_diff
+		return -0.75 * math.log(inside_log) 
+
+	min_length = minLength(DNA_List)
+	DNA_List = truncate(DNA_List, min_length)
+	matrix_size = len(DNA_List)
+	distMatrix = numpy.zeros((matrix_size, matrix_size))
+
+	for i in range(0, matrix_size):
+		for j in range(0, matrix_size):
+			if i == j:
+				distMatrix[i][j] = 0
+			else:
+				distMatrix[i][j] = calcDifference(DNA_List[i], DNA_List[j])
+	return distMatrix
 
 def calcRowSum(matrix, row):
 	"""calculates the sum of a particular row, but works for columns too since these 
@@ -149,8 +192,8 @@ def makeNewMatrix(distMatrix, QMatrix, taxaList):
 
 	return newMatrix
 
-def calc3x3Matrix(distMatrix, taxaList):
-	""" This is the 3-point-formula taught in lecture. Only exucuted when exactly 3 nodes
+def calcLastMatrix(distMatrix, taxaList):
+	""" This is the 3-point-formula. Only exucuted when exactly 3 nodes
 	are left to be joined. """
 	AtoB = distMatrix[0][1]
 	AtoC = distMatrix[0][2]
@@ -169,7 +212,7 @@ def calc3x3Matrix(distMatrix, taxaList):
 	return
 
 def writeGV(matrixList):
-	with open('final_test4.gv', 'a') as the_file:
+	with open('doctor_patient_DNA_comparison.gv', 'a') as the_file:
 		the_file.write('graph G {\n')
 
 		for pair in matrixList: 
@@ -187,49 +230,71 @@ def writeGV(matrixList):
 
 """calling neighbor joining on testMatrix. Writes a .gv file."""
 def main():
-	#mat = numpy.zeros((5, 5))
-	#mat[0, :] = numpy.array([0, 5, 9, 9, 8])
-	#mat[1, :] = numpy.array([5, 0, 10, 10, 9])
-	#mat[2, :] = numpy.array([9, 10, 0, 8, 7])
-	#mat[3, :] = numpy.array([9, 10, 8, 0, 3])
-	#mat[4, :] = numpy.array([8, 9, 7, 3, 0])
-	#taxaList = ['a', 'b', 'c', 'd', 'e']
 
-	mat = numpy.zeros((5, 5))
-	mat[0, :] = numpy.array([0.0, 0.18, 0.11, 0.113, 0.215])
-	mat[1, :] = numpy.array([0.189, 0.0, 0.179, 0.192, 0.211])
-	mat[2, :] = numpy.array([0.11, 0.179, 0.0, 0.094, 0.205])
-	mat[3, :] = numpy.array([0.113, 0.192, 0.094, 0.0, 0.210])
-	mat[4, :] = numpy.array([0.215, 0.211, 0.205, 0.214, 0.0])
-	taxaList = ['gorrila', 'orangutan', 'human', 'chimp', 'gibbon']
+	# below are 4 test cases.
+	# mat = numpy.zeros((5, 5))
+	# mat[0, :] = numpy.array([0, 5, 9, 9, 8])
+	# mat[1, :] = numpy.array([5, 0, 10, 10, 9])
+	# mat[2, :] = numpy.array([9, 10, 0, 8, 7])
+	# mat[3, :] = numpy.array([9, 10, 8, 0, 3])
+	# mat[4, :] = numpy.array([8, 9, 7, 3, 0])
+	# taxaList = ['a', 'b', 'c', 'd', 'e']
 
-	#mat = numpy.zeros((6, 6))
-	#mat[0, :] = numpy.array([0, 5, 4, 7, 6, 8])
-	#mat[1, :] = numpy.array([5, 0, 7, 10, 9, 11])
-	#mat[2, :] = numpy.array([4, 7, 0, 7, 6, 8])
-	#mat[3, :] = numpy.array([7, 10, 7, 0, 5, 9])
-	#mat[4, :] = numpy.array([6, 9, 6, 5, 0, 8])
-	#mat[5, :] = numpy.array([8, 11, 8, 9, 8, 0])
-	#taxaList = ['a', 'b', 'c', 'd', 'e', 'f']
+	# mat = numpy.zeros((5, 5))
+	# mat[0, :] = numpy.array([0.0, 0.18, 0.11, 0.113, 0.215])
+	# mat[1, :] = numpy.array([0.189, 0.0, 0.179, 0.192, 0.211])
+	# mat[2, :] = numpy.array([0.11, 0.179, 0.0, 0.094, 0.205])
+	# mat[3, :] = numpy.array([0.113, 0.192, 0.094, 0.0, 0.210])
+	# mat[4, :] = numpy.array([0.215, 0.211, 0.205, 0.214, 0.0])
+	# taxaList = ['gorrila', 'orangutan', 'human', 'chimp', 'gibbon']
+
+	# mat = numpy.zeros((6, 6))
+	# mat[0, :] = numpy.array([0, 5, 4, 7, 6, 8])
+	# mat[1, :] = numpy.array([5, 0, 7, 10, 9, 11])
+	# mat[2, :] = numpy.array([4, 7, 0, 7, 6, 8])
+	# mat[3, :] = numpy.array([7, 10, 7, 0, 5, 9])
+	# mat[4, :] = numpy.array([6, 9, 6, 5, 0, 8])
+	# mat[5, :] = numpy.array([8, 11, 8, 9, 8, 0])
+	# taxaList = ['a', 'b', 'c', 'd', 'e', 'f']
+
+	# mat = numpy.zeros((8, 8))
+	# mat[0, :] = numpy.array([0, 7, 8, 11, 13, 16, 13, 17])
+	# mat[1, :] = numpy.array([7, 0, 5, 8, 10, 13, 10, 14])
+	# mat[2, :] = numpy.array([8, 5, 0, 5, 7, 10, 7, 11])
+	# mat[3, :] = numpy.array([11, 8, 5, 0, 8, 11, 8, 12])
+	# mat[4, :] = numpy.array([13, 10, 7, 8, 0, 5, 6, 10])
+	# mat[5, :] = numpy.array([16, 13, 10, 11, 5, 0, 9, 13])
+	# mat[6, :] = numpy.array([13, 10, 7, 8, 6, 9, 0, 8])
+	# mat[7, :] = numpy.array([17, 14, 11, 12, 10, 13, 8, 0])
+	# taxaList = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+
+	hiv_data = loadmat('flhivdata.mat')
+	doctor_sequence = hiv_data["dnt"]
+	patient_1 = hiv_data["ptb"]
+	patient_2 = hiv_data["ptc"]
+	patient_3 = hiv_data["ptd"]
+	non_patient_1 = hiv_data["lc1"]
+	non_patient_2 = hiv_data["lc5"]
+
+	doctor_sequence_DNA = doctor_sequence[0]
+	patient_1_DNA = patient_1[0]
+	patient_2_DNA = patient_2[0]
+	patient_3_DNA = patient_3[0]
+	non_patient_1_DNA = non_patient_1[0]
+	non_patient_2_DNA = non_patient_2[0]
+
+	DNA_List = [doctor_sequence_DNA, patient_1_DNA, patient_2_DNA, patient_3_DNA, non_patient_1_DNA, non_patient_2_DNA]
+	mat = MakeDistanceMatrixFromDNA(DNA_List)
+	taxaList = ['DOCTOR', 'HIV_Patient_1', 'HIV_Patient_2', 'HIV_Patient_3', 'random_guy_1', 'random_guy_2']
 
 	while mat.shape[0] > 3:
 		matrix1 = QMatrix(mat)
 		matrix2 = makeNewMatrix(mat, matrix1, taxaList)
 		mat = matrix2
 
-	calc3x3Matrix(mat, taxaList)
+	calcLastMatrix(mat, taxaList)
 
 	writeGV(matrixList)
 	print ".gv file written"
 
-
 main()
-
-
-
-
-
-		 
-
-
-

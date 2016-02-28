@@ -1,0 +1,11 @@
+graph G {
+	split_1 -- DOCTOR[ label = 0.0134820434891];
+	split_1 -- HIV_Patient_2[ label = 0.0243808855849];
+	split_2 -- split_1[ label = 0.00590380641004];
+	split_2 -- HIV_Patient_1[ label = 0.0179336162182];
+	split_3 -- split_2[ label = 0.03381690175];
+	split_3 -- HIV_Patient_3[ label = 0.0512395960047];
+	split_4 -- split_3[ label = 0.00357884531211];
+	split_4 -- random_guy_1[ label = 0.326342143627];
+	split_4 -- random_guy_2[ label = 0.0377887182093];
+}
