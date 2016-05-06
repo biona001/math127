@@ -1,5 +1,6 @@
 """ Weighted back projection algorithm. """
 from __future__ import print_function
+from MRCFile import MRCFile
 
 import sys
 import struct
@@ -11,107 +12,145 @@ import numpy.fft as fft
 import os.path
 from collections import namedtuple
 import math
+import matplotlib.pyplot as plt
 
 ############ THE ALGORITHM ###############
-# Given N images (I_1 ... I_N), viewing directions (F_1 ... F_N), and distance D
+# Given N images (I_1 ... I_N), viewing directions (F_1 ... F_N), and distance D = 153
 # find an approximation to rho defined as follow:
-# rho(x,y,z) = IFFT (B(x,y,z) / H(x,y,z)).
+# rho(x,y,z) = IFFT (B(x,y,z) / H(x,y,z)). 
 #
-# B(x,y,z) = sum i from 1 to N of FFT(b_i * [(x,y,z) dot a_i + (x,y,z) dot b_i] + (x,y,z) dot c_i)
-# (a_i b_i c_i are the columns of rotation matrix F_i)
-# H(x,y,z) = sum i from 1 to N of D * sinc(D * pi * [(x,y,z) dot c_i])
-# 
-# b_i(x_i,y_i,z_i) = IFFT( FFT(I) * FFT(l_i) ) (this b_i is a separate function, not b_i as above)
-# FFT(l_i) = FFT(delta(x,y) * rect(z)) = D * sinc(D * pi * z_i) by some clever math.
-# sinc(x) = sin(x) / x
-# rect(z) = 1 if -D/2 < z < D/2 and 0 otherwise
-# x_i = (x,y,z) dot a_i, and likewise for y_i and z_i
+# Here B is the back projection of the images, and H is some filtering.
+#
+# To compute B, for each image, compute its back projection as done in b(image) below, and sum them.
+# To compute H, for each orientation, compute D * sinc(D pi (x,y,z) dot c_i) where c_i = last
+# column of the orientation matrix. Then sum them all. 
 ##########################################
 
-# NOTE: Whenever we use fft, we must perform a fourier shift fftshift. I.e. Shifting the 
-# zero-frequency component to the center of the spectrum (matrix or vector in our case)
+# CAVEATS 
+# 1) Whenever we use FFTN (or IFFTN), we must perform a fourier shift fftshift. I.e. Shifting the 
+# zero-frequency component to the center of the spectrum (2D or 3D matrix in our case)
 
-def fourier_l(z_i, D):
-    return D * sinc(D * math.pi * z_i)
+# after reconstruct, write an MRC file, and load that in the kimera to look (from UCSF)?
 
-def fourier_image(image):
-    my_image = fft.fftn(image)
-    my_image = fft.fftshift(my_image)
-    my_image = my_image[:None]
-    return my_image
+def b(image): 
+    image_hat = fft.fftn(image) / 153.0 / 153.0
+    image_hat = fft.fftshift(image_hat) 
+    image_hat = np.expand_dims(image_hat, axis=2)
+    image_hat = np.repeat(image_hat, 153, axis=2) #turn 2D image to 153 copies of 2D image
 
-def b(x_i, y_i, z_i, image, D): #image = 1 image
-    fft_image = fourier_image(x_i, y_i, image)
-    fft_l = fourier_l(z_i, D)
-    result = fft.ifftn(fft_image * fft_l)
+    z = np.linspace(-1, 1, 153)
+    s = 2 * np.sinc(2 * math.pi * z)
+    s = np.expand_dims(s, axis=0)
+    s = np.expand_dims(s, axis=0)
+    s = np.repeat(s, 153, axis=0)
+    s = np.repeat(s, 153, axis=1)
 
-    return fft.ifftshift(result)
+    result = fft.ifftshift(image_hat * s)
+    return fft.ifftn(result)
 
-def B(x, y, z, images, orientations, D):
-    N = len(images)
-    sum = 0.0
-    for i in range(0, N):
-        a_i = [row[0] for row in orientations[i]]
-        b_i = [row[1] for row in orientations[i]]
-        c_i = [row[2] for row in orientations[i]]
-
-        v1 = [x, y, z]
-        v2 = [a_i, b_i, c_i]
-        dotted = dot(v1, v2)
-
-        x_i = dot(v1, a_i) # these are scalars
-        y_i = dot(v1, b_i)
-        z_i = dot(v1, c_i)
-        my_b = b(x_i, y_i, z_i, images[i], D)
-        result = fft.fftn(my_b * dotted)
-        sum += fft.fftshift(result)
-    return sum
-
-def sinc(x):
-    return math.sin(x) / x
-
-def H(x, y, z, orientations, D):
+def H(orientations): # This is filtering
     N = len(orientations)
-    sum = 0.0
-    for j in range(0, N):
-        c = [row[2] for row in orientations[j]]
-        v1 = [x, y, z]
-        dotted = dot(v1, c)
-        sum += D * sinc(D * math.pi * dotted)
-    return sum
+    H_matrix = np.zeros((153, 153, 153), dtype=complex)
 
-def dot(v1, v2):
-    assert len(v1) == 3, 'v1 is not of length 3, is that right?'
-    assert len(v2) == 3, 'v2 is not of length 3, is that right?'
-    return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2]
+    x = np.linspace(-1, 1, 153)
+    y = np.linspace(-1, 1, 153)
+    z = np.linspace(-1, 1, 153)
+    xx, yy, zz = np.meshgrid(x, y, z)
 
-def reconstruct(images, orientations, D):
-    assert len(images) == len(orientations), '# of images not the same as # of orientations'
-    size = len(images)
+    for i in range(N):
+        last_col = orientations[i][:, 2]
+        H_matrix += 153.0 * np.sinc(153.0 * math.pi * (xx * last_col[0] + yy * last_col[1] + zz * last_col[2]) )
+    return H_matrix
 
-    rho = np.zeros((size, size, size))
-    for x in range(size):
-        for y in range(size):
-            for z in range(size):
-                B = B(x, y, z, images, orientations, D)
-                H = H(x, y, z, orientations, D)
-                result = fft.ifftn(B / H)
-                rho[x][y][z] = fft.ifftshift(result)
-    return rho
+    # for i in range(153):
+    #     print("Computing H: currently on the " + str(i) + "th loop")
+    #     for j in range(153):
+    #         for k in range(153):
+    #             sum = 0.0
 
-def test():
-    r = [[0.25581,  -0.77351,   0.57986], 
+    #             for l in range(N):
+    #                 c = orientations[l][:, 2]
+    #                 v1 = [x[i], y[j], z[k]]
+    #                 dotted = np.dot(v1, c)
+    #                 sum += 153 * np.sinc(153 * math.pi * dotted)
+
+    #             H_matrix[i][j][k] = 1.0 / sum
+
+    # return H_matrix
+
+def make_B_matrix(images):
+    rho_matrix_sum = np.zeros((153, 153, 153), dtype=complex)
+    for image in images:
+        rho_matrix_sum += b(image) 
+        print("Computed some b for some image! Continue running....")
+
+    return rho_matrix_sum
+
+def reconstruct(images, orientations): # input should be lists of matrices
+    B_matrix = make_B_matrix(images)
+    H_matrix = H(orientations)
+    result = fft.ifftshift(B_matrix / H_matrix)
+
+    return fft.ifft(result)
+
+def main():
+    f = MRCFile('zika_153.mrc')
+    f.load_all_slices()
+
+    r = np.array([[0.25581,  -0.77351,   0.57986], 
      [-0.85333,  -0.46255,  -0.24057], 
-     [0.45429,  -0.43327,  -0.77839]]
-    a_i = [row[0] for row in r]
-    b_i = [row[1] for row in r]
-    c_i = [row[2] for row in r]
-
-    rho = np.zeros((3, 3))
-    rho = np.expand_dims(rho, axis=2)
-    print(rho.shape)
-    rho = np.repeat(rho, 3, axis=2)
-    print(rho.shape)
+     [0.45429,  -0.43327,  -0.77839]])
 
 
-test()
+    molecule = f.slices[:, :, :]
+    middle_slice = fft.ifftn(fft.ifftshift(fft.fftshift(fft.fftn(molecule))[:, :, 76]))
+    # middle_slice = middle_slice.real
+    # print(middle_slice)
+    # plt.imshow(middle_slice)
+    # plt.show()
+
+
+    middle_back_proj = b(middle_slice)
+    middle_back_proj = middle_back_proj.real[:, :, 76]
+    plt.imshow(middle_back_proj)
+    plt.show()
+
+
+    # display_image(f.slices[:,:,0])
+
+
+    # s = r[:,2]
+    # print(s)
+
+    # matrix_dotted = np.full((3,3,3), 0.17)
+    # print(matrix_dotted * r)
+
+    # r = np.expand_dims(r, axis=2)
+    # r = np.repeat(r, 153, axis=2) #turn 2D image to 153 copies of 2D image
+    # print(r.shape)
+    # print(r[:, :, 133] - r[:, :, 46])
+
+    # print(f.slices[:,:,0].shape)
+    # plt.imshow(f.slices[:, :, 68], cmap='hot')
+    # plt.show()
+
+    # fdsa = b(f.slices[:, :, 76])
+    # fdsa = fdsa.real
+    # plt.imshow(fdsa[:, :, 100], cmap='hot')
+    # plt.show()
+
+    # orientations = []
+    # for i in range(153):
+    #     orientations.append(r)
+
+    # images = []
+    # for i in range(153):
+    #     images.append(f.slices[:, :, i])
+
+    # fdsa = reconstruct(images, orientations)
+    # fdsa = fdsa.real
+    # plt.imshow(fdsa[:, :, 100], cmap='hot')
+    # plt.show()
+
+
+main()
